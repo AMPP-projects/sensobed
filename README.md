@@ -1,2 +1,2 @@
 # sensobed
-https://mcpardo.github.io/github-pages-with-jekyll/
+https://mcpardo.github.io/sensobed/
