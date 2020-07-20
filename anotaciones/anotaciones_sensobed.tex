@@ -1,0 +1,155 @@
+% Modificar clase de documento e idiomas, tildes, etc%
+\documentclass[twoside, twocolumn, spanish] {article}
+\usepackage[spanish,es-tabla]{babel} % tabla
+\usepackage[utf8]{inputenc}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Para el enumerate
+\usepackage[shortlabels]{enumitem}
+\setlength\parindent{0pt}  % quita la indentación
+%\setcounter{secnumdepth}{0} % sections are level 1 % para hacer que todas las secciones con* salgan en el índice 
+
+
+% Paquete y configuración para poder añadir código %
+\usepackage{listings}
+\usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
+\definecolor{mygreen}{RGB}{28,172,0} 
+\definecolor{mylilas}{RGB}{170,55,241}
+\definecolor{fondomatlab}{RGB}{255,255,204}
+\lstset{language=Matlab,
+    %basicstyle=\color{red},
+    backgroundcolor=\color{fondomatlab},
+    breaklines=true,%
+    morekeywords={matlab2tikz},
+    keywordstyle=\color{blue},%
+    morekeywords=[2]{1}, keywordstyle=[2]{\color{dfblack}},
+    identifierstyle=\color{black},%
+    stringstyle=\color{mylilas},
+    commentstyle=\color{mygreen},%
+    showstringspaces=false,%without this there will be a symbol in the places where there is a space
+    numbers=left,%
+    numberstyle={\tiny \color{black}},% size of the numbers
+    numbersep=11pt % this defines how far the numbers are from the text
+    emph=[1]{for,end,break},emphstyle=[1]\color{red}, %some words to emphasise
+    %emph=[2]{word1,word2}, emphstyle=[2]{style},    
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% valor absoluto y norma
+\usepackage{mathtools}
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+
+% Paquete circuitikz para dibujar circuitos %
+\usepackage{circuitikz}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Paquetes de matemáticas %
+\usepackage{amsmath,amssymb}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Paquetes para cargar gráficos %
+\usepackage{graphicx}
+\usepackage{subfig}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Paquete para hiper enlaces hiperlink %
+\usepackage{hyperref}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Modificar los márgenes %
+\usepackage{geometry}
+\geometry{a4paper,hmargin={3cm,3cm},vmargin={3cm,3cm}}
+\setlength{\columnsep}{0.5cm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Estilo de pagina (cabecera y pie de página)
+% Estilo de pagina (cabecera y pie de página)
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}   % Reset valores default
+	% Para que la sección del encabezado sea la primera que se ve en la pagina
+%\renewcommand{\sectionmark}[1]{\markright{#1}{}}
+%\fancyhead[CE,CO]{\textsc{\leftmark}}
+	% leftmark --> nombre de la última sección de la página
+	% CE, CO ---> center even, center odd
+	% Otra posible config, con sección a la izda y subsección a la derecha
+	% thepage ---> número de página abajo en el centro
+\fancyhead[RE,RO]{\textsc{\rightmark}}
+\fancyhead[LE,LO]{\textsc{\leftmark}}
+\fancyhead[CE,CO]{\textsc{Pongo lo que quiera}}
+\fancyfoot[C]{\thepage}
+
+% \renewcommand{\headrulewidth}{0pt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Paquete para poder añadir código %
+\usepackage{listings}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Paquete para poder añadir dummy text %
+\usepackage{blindtext}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Diseño del titulo, resumen y demás %
+\usepackage{titling}
+\title{Trabajo \\[0.5cm]	
+	\Large{Nombre asignatura} \\
+}
+\author{%
+	Mari Carmen Pardo Martínez \\
+	\normalsize{Universidad de Granada}\\
+	\normalsize{\href{mailto:mcpardo@correo.ugr.es}{mcpardo@correo.ugr.es}}
+	}
+
+\date{\today}
+\renewcommand{\maketitlehookd}{
+
+	\renewcommand{\abstractname}{\center{Resumen}}
+	\begin{abstract}
+resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen resumen
+	\end{abstract}
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+\thispagestyle{empty}
+\maketitle
+
+\tableofcontents
+
+\section{Algunos datos}
+
+\begin{itemize}
+\item $f_s=500$ muestras/s $\rightarrow$ cada muestra se toma a partir del promedio de 128 para reducir el efecto del ruido blanco.
+\item 
+\end{itemize}
+
+\section{Dudas}
+\begin{enumerate}
+\item Filtros: Vemos que falta el filtro FPB de 0,5Hz (además no encontramos el sentido de este filtro). Tampoco entendemos porque el FPA tiene una frecuencia entre 0.1 y 0.8Hz.
+\item Muestreo: Se toma una frecuencia de muestreo de 200, mientras que en el informe indica 500Hz. Además, no vemos donde se hace el promedio de 128 muestras.
+\end{enumerate}
+
+
+\section{Referencias}
+\subsection{Implementación de filtros en RPI}
+\begin{itemize}
+\item \href{https://docs.scipy.org/doc/scipy/reference/signal.html}{Librería Scipy Signal} y \href{https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.sosfilt.html#scipy.signal.sosfilt}{función sosfilter}
+\item \href{https://pypi.org/project/yodel/}{Librería Yodel}
+\item \href{}{}
+\item \href{}{}
+\end{itemize}
+
+
+
+\clearpage
+\thispagestyle{fancy}
+\end{document}
+

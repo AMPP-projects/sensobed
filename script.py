@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Editor de Spyder
+import numpy as np
+import matplotlib as plt
 
-Este es un archivo temporal.
-"""
 
