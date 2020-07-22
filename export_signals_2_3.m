@@ -15,7 +15,7 @@ end
 t2 = t2';
 s2 = s2';
 signal2 = [t2, s2];
-writematrix(signal2, 'signal2.txt')
+writematrix(signal2, 'signal_h1.txt')
 
 signal3 = readmatrix('Pruebas adquisicion.xlsx', 'Sheet', 'Hoja2');
-writematrix(signal3, 'signal3.txt')
+writematrix(signal3, 'signal_h2.txt')
