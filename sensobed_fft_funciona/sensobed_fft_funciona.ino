@@ -81,14 +81,13 @@ void IRAM_ATTR onTimer() {
 
 // Pulso detectado entre 24 y 162 ppm
 // Para 200 muestras por segundo
-// TIENE PINTA DE SER EL DE 5 HZ PRIMERO DE LOS PULSOS
+
 const double sos_h[][6] = {                 // filtro pulso 1: paso alta, IIR, orden 2, 0.1-0.8 Hz, 20 dB
     {1, -2, 1,  1, -1.98598595723005, 0.986083473009604} 
 };
 const double g_h[] = {0.993017357559912};
 SOSFilter<1> filter_h(sos_h, g_h);
 
-// TIENE PINTA DE SER EL DE 10 HZ PRIMERO DE LOS PULSOS
 const double sos_h2[][6] = {                 // filtro pulso 3: paso bajo, IIR, mínimo orden, 1-10 Hz, 80 dB
     {1, 2, 1,  1, -1.96698444058921, 0.969464886120290},
     {1, 2, 1,  1, -1.91956461799301, 0.921985265243733},
@@ -262,8 +261,8 @@ if(wait == 0){
         senal_filtro_h = 0;  
       }
       //Serial.println(senal_filtro_h,5);
-      muestra_filtrada_y=senal_filtro_h*senal_filtro_h;
-      muestra_filtrada=filter_h2.filter(muestra_filtrada_y);
+      muestra_filtrada_y=senal_filtro_h*senal_filtro_h; // se eleva al cuadrado la señal filtrada
+      muestra_filtrada=filter_h2.filter(muestra_filtrada_y); // se aplica el segundo filtro
       //Serial.println(muestra_filtrada,5);
       vReal[j]=muestra_filtrada;
       vImag[j]=0;
