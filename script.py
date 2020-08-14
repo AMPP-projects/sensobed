@@ -1,4 +1,4 @@
-
+#%%
 # NOTAS
 #%reset -f # Borra variables sin confirmacion
 
@@ -6,18 +6,42 @@ import numpy as np
 from numpy import loadtxt
 import matplotlib.pyplot as plt
 import scipy.signal as sc
+from mpldatacursor import datacursor
 
 plt.rcParams['axes.grid'] = True
 
 # FUNCIONES
-        
-# Dibuja la señal original y la señal con ruido junto con sus espectros
+
+# Dibuja una señal con su espectro
 def plot_signal(signal, sig_awgn, fs, L, num):
+    t = np.arange(0, len(signal)*Ts, Ts)
+    # FFT de señales completas con y sin ruido
+    signal_f = np.fft.fft(signal, L)
+    f = np.linspace(0.0, fs/2.0, L//2)
+    
+    plt.figure(num)
+    plt.subplot(2,1,1)
+    plt.plot(t, signal)
+    plt.title('Signal without noise')
+    plt.ylabel('Descrete value')
+    plt.xlabel('Time (s)')
+    
+    plt.subplot(2,1,2)
+    plt.plot(f, 2.0/L * np.abs(signal_f[0:L//2]))
+    plt.title('FFT of signal without noise')
+    plt.ylabel('Descrete value')
+    plt.xlabel('Frecuencia (Hz)')
+    plt.xlim([0, 100])
+    
+    plt.show()
+
+# Dibuja la señal original y la señal con ruido junto con sus espectros
+def plot_signal_noise(signal, sig_awgn, fs, L, num):
     
     t = np.arange(0, len(signal)*Ts, Ts)
     # FFT de señales completas con y sin ruido
     signal_f = np.fft.fft(signal, L)
-    sig_awgn_f = np.fft.fft(sig_awgn, 2**16)
+    sig_awgn_f = np.fft.fft(sig_awgn, L)
     f = np.linspace(0.0, fs/2.0, L//2)
     
     plt.figure(num)
@@ -31,7 +55,7 @@ def plot_signal(signal, sig_awgn, fs, L, num):
     plt.plot(f, 2.0/L * np.abs(signal_f[0:L//2]))
     plt.title('FFT of signal without noise')
     plt.ylabel('Descrete value')
-    plt.xlabel('Time (s)')
+    plt.xlabel('Frecuencia (Hz)')
     plt.xlim([0, 5])
     
     plt.subplot(2,2,3)
@@ -45,11 +69,13 @@ def plot_signal(signal, sig_awgn, fs, L, num):
     plt.plot(f, 2.0/L * np.abs(sig_awgn_f[0:L//2]))
     plt.title('FFT of signal with noise')
     plt.ylabel('Descrete value')
-    plt.xlabel('f (Hz)')
+    plt.xlabel('Frecuencia (Hz)')
     plt.xlim([0, 5])
     
     plt.show()
 
+#------------------------------------------------------------------------------
+# LECTURA DE SEÑALES Y ADICIÓN DE RUIDO
 
 signal_b = loadtxt("signal_bint.txt", comments="#", delimiter=" ", unpack=False)
 signal_h2 = loadtxt("signal_h2int.txt", comments="#", delimiter=" ", unpack=False)
@@ -71,12 +97,78 @@ signal_f = np.fft.fft(signal, L)
 sig_awgn_f = np.fft.fft(sig_awgn, 2**16)
 f = np.linspace(0.0, fs/2.0, L//2)
 
-plot_signal(signal_b, sigb_awgn, fs, L, 1)
-plot_signal(signal_h2, sigh2_awgn, fs, L, 2)
-plot_signal(signal, sig_awgn, fs, L, 3)
+plot_signal_noise(signal_b, sigb_awgn, fs, L, 1)
+plot_signal_noise(signal_h2, sigh2_awgn, fs, L, 2)
+plot_signal_noise(signal, sig_awgn, fs, L, 3)
 
 
-#%% Inicio del procesamiento
+#%% INICIO DEL PROCESAMIENTO
+
+# Un ritmo cardiaco normal está en [50, 200] pulsaciones/min
+# Un ritmo de respiración normal está en [10, 40] respiraciones/min
+brate_max = 40
+brate_min = 10
+hrate_max = 200
+hrate_min = 50
+
+fL = min(brate_min, hrate_min)/60
+fH = max(brate_max, hrate_max)/60
+fs = 1000
+fN = fs/2  # Frecuencia de Nyquist (usada en funciones para normalizar)
+
+# Sin usar SOS
+b, a = sc.butter(4, [fL/fN, fH/fN], btype='band')
+w, h = sc.freqz(b, a, worN=L, fs=1000)
+
+plt.figure(5)
+plt.subplot(2,1,1)
+plt.plot(w, 20 * np.log10(abs(h)), 'b')
+plt.ylabel('Amplitude (dB)', color='b')
+plt.xlabel('Frequency (rad/s)')
+plt.xscale('log')
+plt.xlim(0.001, 1000)
+plt.ylim(-80, 1)
+plt.subplot(2,1,2)
+angles = np.unwrap(np.angle(h))
+plt.plot(w, angles, 'g')
+plt.ylabel('Angle (radians)', color='g')
+plt.xlim(0.001, 1000)
+plt.xscale('log')
+plt.grid()
+plt.axis('tight')
+datacursor(draggable=True)
+plt.show()
+
+# Usando SOS: Mejor opción cuando se aumenta el orden del filtro
+sos = sc.butter(3, [fL/fN, fH/fN], btype='band', output='sos')
+w, h = sc.sosfreqz(sos, worN=L, fs=1000)
+
+plt.figure(6)
+plt.subplot(2,1,1)
+plt.plot(w, 20 * np.log10(abs(h)), 'b')
+plt.ylabel('Amplitude (dB)', color='b')
+plt.xlabel('Frequency (rad/s)')
+plt.xscale('log')
+plt.xlim(0.001, 1000)
+plt.ylim(-80, 1)
+plt.subplot(2,1,2)
+angles = np.unwrap(np.angle(h))
+plt.plot(w, angles, 'g')
+plt.ylabel('Angle (radians)', color='g')
+plt.xlim(0.001, 1000)
+plt.xscale('log')
+plt.grid()
+plt.axis('tight')
+datacursor(draggable=True)
+plt.show()
+
+
+sig_awgn_filt = sc.sosfilt(sos, sig_awgn)
+plot_signal_noise(sig_awgn, sig_awgn_filt, fs, L, 7)
+
+
+
+#%% SEGMENTACIÓN DE LA SEÑAL PARA SIMULACIÓN DE VENTANAS
 
 l = len(sig_awgn)  # longitud total de la señal a procesar
 n_win = l//3 # numero de muestras de una ventana
@@ -87,7 +179,7 @@ for i in range(0,iter+1):   # i toma valores entre 0 e iter
     print(i)
     if i < iter:
         y = sig_awgn[i*n_win:(i+1)*n_win]
-        plot_signal(y, y, fs, L, i)
+       # plot_signal_noise(y, y, fs, L, i)
         
     else:
         y[0:resto] = sig_awgn[iter*n_win:iter*n_win+resto]
