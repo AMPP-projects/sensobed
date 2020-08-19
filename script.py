@@ -92,17 +92,18 @@ sig_awgn = np.around(signal + noise);
 fs = 1000;
 Ts = 1/fs;
 t = np.arange(0, len(signal)*Ts, Ts)
-L = 2**16;
+L = 2**18;
 signal_f = np.fft.fft(signal, L)
-sig_awgn_f = np.fft.fft(sig_awgn, 2**16)
+sig_awgn_f = np.fft.fft(sig_awgn, L)
 f = np.linspace(0.0, fs/2.0, L//2)
 
 plot_signal_noise(signal_b, sigb_awgn, fs, L, 1)
 plot_signal_noise(signal_h2, sigh2_awgn, fs, L, 2)
 plot_signal_noise(signal, sig_awgn, fs, L, 3)
 
-
 #%% INICIO DEL PROCESAMIENTO
+
+sig_awgn = np.around(signal + noise);
 
 # Un ritmo cardiaco normal está en [50, 200] pulsaciones/min
 # Un ritmo de respiración normal está en [10, 40] respiraciones/min
@@ -117,7 +118,7 @@ fs = 1000
 fN = fs/2  # Frecuencia de Nyquist (usada en funciones para normalizar)
 
 # Sin usar SOS
-b, a = sc.butter(4, [fL/fN, fH/fN], btype='band')
+b, a = sc.butter(4, [fL/fN, 40/fN], btype='band')
 w, h = sc.freqz(b, a, worN=L, fs=1000)
 
 plt.figure(5)
@@ -162,10 +163,49 @@ plt.axis('tight')
 datacursor(draggable=True)
 plt.show()
 
-
 sig_awgn_filt = sc.sosfilt(sos, sig_awgn)
+# sig_awgn_filt = sig_awgn_filt - min(sig_awgn_filt)
 plot_signal_noise(sig_awgn, sig_awgn_filt, fs, L, 7)
 
+sig_filt_f = np.fft.fft(sig_awgn_filt, L)
+sig_filt_f = sig_filt_f[0:L//2]
+maxim = max(np.abs(sig_filt_f))   # Pico maximo en el espectro (respiracion)
+ibr = np.where(np.abs(sig_filt_f) == maxim)
+br = f[ibr]
+br_min = br*60  # Resultado del ritmo respiratorio en resp/min
+
+#%% GENERACIÓN DE SEÑAL CUADRADA EQUIVALENTE A LA RESPIRACIÓN
+
+threshold = np.mean( [min(sig_awgn), max(sig_awgn)] )
+j = 0
+k = 0
+sig_sup = []
+sig_inf = []
+
+for i in range(0, len(sig_awgn)):
+    if sig_awgn[i] >= threshold:
+        sig_sup.append(sig_awgn[i])
+    else:
+        sig_inf.append(sig_awgn[i])
+
+sig_sup = np.array(sig_sup)
+sig_inf = np.array(sig_inf)
+vlow = np.mean(sig_inf)
+vhi = np.mean(sig_sup)
+square = []
+
+for i in range(0, len(sig_awgn)):
+    if sig_awgn[i] >= threshold:
+        square.append(vhi)
+    else:
+        square.append(vlow)
+        
+square = np.array(square)
+plt.figure(8)
+plt.plot(square)
+        
+    
+    
 
 
 #%% SEGMENTACIÓN DE LA SEÑAL PARA SIMULACIÓN DE VENTANAS
