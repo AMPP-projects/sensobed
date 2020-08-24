@@ -13,61 +13,63 @@ plt.rcParams['axes.grid'] = True
 # FUNCIONES
 
 # Dibuja una señal con su espectro
-def plot_signal(signal, sig_awgn, fs, L, num):
+def plot_signal(signal, fs, L, num, title):
     t = np.arange(0, len(signal)*Ts, Ts)
     # FFT de señales completas con y sin ruido
     signal_f = np.fft.fft(signal, L)
     f = np.linspace(0.0, fs/2.0, L//2)
     
     plt.figure(num)
+    plt.suptitle(title)
     plt.subplot(2,1,1)
     plt.plot(t, signal)
-    plt.title('Signal without noise')
+    plt.title('Time signal')
     plt.ylabel('Descrete value')
     plt.xlabel('Time (s)')
     
     plt.subplot(2,1,2)
-    plt.plot(f, 2.0/L * np.abs(signal_f[0:L//2]))
-    plt.title('FFT of signal without noise')
+    plt.plot(f, 2**8/L * np.abs(signal_f[0:L//2]))
+    plt.title('Signal FFT')
     plt.ylabel('Descrete value')
     plt.xlabel('Frecuencia (Hz)')
-    plt.xlim([0, 100])
+    plt.xlim([0, 5])
     
     plt.show()
 
-# Dibuja la señal original y la señal con ruido junto con sus espectros
-def plot_signal_noise(signal, sig_awgn, fs, L, num):
+# Dibuja dos señales y sus espectros
+def plot_signals(sig1, sig2, fs, L, num, title):
     
-    t = np.arange(0, len(signal)*Ts, Ts)
+    t = np.arange(0, len(sig1)*Ts, Ts)
     # FFT de señales completas con y sin ruido
-    signal_f = np.fft.fft(signal, L)
-    sig_awgn_f = np.fft.fft(sig_awgn, L)
+    sig1_f = np.fft.fft(sig1, L)
+    sig2_f = np.fft.fft(sig2, L)
     f = np.linspace(0.0, fs/2.0, L//2)
     
     plt.figure(num)
+    plt.suptitle(title)
     plt.subplot(2,2,1)
-    plt.plot(t, signal)
-    plt.title('Signal without noise')
+    plt.plot(t, sig1)
+    plt.title('Signal 1 in time')
     plt.ylabel('Descrete value')
     plt.xlabel('Time (s)')
     
     plt.subplot(2,2,2)
-    plt.plot(f, 2.0/L * np.abs(signal_f[0:L//2]))
-    plt.title('FFT of signal without noise')
+    plt.plot(f, 2**8/L * np.abs(sig1_f[0:L//2]))
+    plt.title('Signal 1 FFT')
     plt.ylabel('Descrete value')
     plt.xlabel('Frecuencia (Hz)')
     plt.xlim([0, 5])
     
     plt.subplot(2,2,3)
-    plt.plot(t, sig_awgn)
-    plt.title('Signal with noise')
+    plt.plot(t, sig2)
+    plt.title('Signal 2 in time')
     plt.ylabel('Descrete value')
     plt.xlabel('Time (s)')
     
     
     plt.subplot(2,2,4)
-    plt.plot(f, 2.0/L * np.abs(sig_awgn_f[0:L//2]))
-    plt.title('FFT of signal with noise')
+    plt.plot(f, 2**8/L * np.abs(sig2_f[0:L//2]))
+    plt.title('Signal 2 FFT')
     plt.ylabel('Descrete value')
     plt.xlabel('Frecuencia (Hz)')
     plt.xlim([0, 5])
@@ -83,11 +85,12 @@ signal = loadtxt("signal_bh2.txt", comments="#", delimiter=" ", unpack=False)
                     
 # Adicion de ruido blanco a la señal
 noise_mean = 0
-noise_desv = 20;
+noise_desv = 20
 noise = np.random.normal(noise_mean, noise_desv, len(signal))
-sigb_awgn = np.around(signal_b + noise);
-sigh2_awgn = np.around(signal_h2 + noise);
-sig_awgn = np.around(signal + noise);
+sigb_awgn = np.around(signal_b + noise)
+sigh2_awgn = np.around(signal_h2 + noise)
+sig_awgn = np.around(signal + noise)
+norm = np.max(sig_awgn)
 
 fs = 1000;
 Ts = 1/fs;
@@ -97,13 +100,14 @@ signal_f = np.fft.fft(signal, L)
 sig_awgn_f = np.fft.fft(sig_awgn, L)
 f = np.linspace(0.0, fs/2.0, L//2)
 
-plot_signal_noise(signal_b, sigb_awgn, fs, L, 1)
-plot_signal_noise(signal_h2, sigh2_awgn, fs, L, 2)
-plot_signal_noise(signal, sig_awgn, fs, L, 3)
+plot_signals(signal_b/norm, sigb_awgn/norm, fs, L, 1, 'Breathing signal with and without noise')
+plot_signals(signal_h2/norm, sigh2_awgn/norm, fs, L, 2, 'Heart signal with and without noise')
+plot_signals(signal/norm, sig_awgn/norm, fs, L, 3, 'Total signal with and without noise')
 
-#%% INICIO DEL PROCESAMIENTO
+#%% OBTENCIÓN DE LA FRECUENCIA RESPIRATORIA
 
-sig_awgn = np.around(signal + noise);
+y = np.around(signal + noise);
+y = y/np.max(y)
 
 # Un ritmo cardiaco normal está en [50, 200] pulsaciones/min
 # Un ritmo de respiración normal está en [10, 40] respiraciones/min
@@ -111,21 +115,22 @@ brate_max = 40
 brate_min = 10
 hrate_max = 200
 hrate_min = 50
-
-fL = min(brate_min, hrate_min)/60
-fH = max(brate_max, hrate_max)/60
+# Primero, se filtra para obtener datos de la respiración (no nos importa
+# degradar las frecuencias del corazón)
+fL = brate_min/60
+fH = brate_max/60
 fs = 1000
 fN = fs/2  # Frecuencia de Nyquist (usada en funciones para normalizar)
 
 # Sin usar SOS
-b, a = sc.butter(4, [fL/fN, 40/fN], btype='band')
+b, a = sc.butter(3, [fL/fN, fH/fN], btype='band')
 w, h = sc.freqz(b, a, worN=L, fs=1000)
 
 plt.figure(5)
 plt.subplot(2,1,1)
 plt.plot(w, 20 * np.log10(abs(h)), 'b')
 plt.ylabel('Amplitude (dB)', color='b')
-plt.xlabel('Frequency (rad/s)')
+plt.xlabel('Frequency (Hz)')
 plt.xscale('log')
 plt.xlim(0.001, 1000)
 plt.ylim(-80, 1)
@@ -148,7 +153,7 @@ plt.figure(6)
 plt.subplot(2,1,1)
 plt.plot(w, 20 * np.log10(abs(h)), 'b')
 plt.ylabel('Amplitude (dB)', color='b')
-plt.xlabel('Frequency (rad/s)')
+plt.xlabel('Frequency (Hz)')
 plt.xscale('log')
 plt.xlim(0.001, 1000)
 plt.ylim(-80, 1)
@@ -163,50 +168,64 @@ plt.axis('tight')
 datacursor(draggable=True)
 plt.show()
 
-sig_awgn_filt = sc.sosfilt(sos, sig_awgn)
-# sig_awgn_filt = sig_awgn_filt - min(sig_awgn_filt)
-plot_signal_noise(sig_awgn, sig_awgn_filt, fs, L, 7)
+y_filt = sc.sosfilt(sos, y)
+plot_signals(y, y_filt, fs, L, 7, 'Unfiltered and filtered signals')
 
-sig_filt_f = np.fft.fft(sig_awgn_filt, L)
-sig_filt_f = sig_filt_f[0:L//2]
-maxim = max(np.abs(sig_filt_f))   # Pico maximo en el espectro (respiracion)
-ibr = np.where(np.abs(sig_filt_f) == maxim)
+y_filt_f = np.fft.fft(y_filt, L)
+y_filt_f = y_filt_f[0:L//2]
+maxim_b = max(2**8/L * np.abs(y_filt_f))   # Pico maximo en el espectro (respiracion)
+ibr = np.where(2**8/L * np.abs(y_filt_f) == maxim_b)
 br = f[ibr]
 br_min = br*60  # Resultado del ritmo respiratorio en resp/min
 
-#%% GENERACIÓN DE SEÑAL CUADRADA EQUIVALENTE A LA RESPIRACIÓN
+#%% OBTENCIÓN DE LA FRECUENCIA CARDÍACA
 
-threshold = np.mean( [min(sig_awgn), max(sig_awgn)] )
-j = 0
-k = 0
-sig_sup = []
-sig_inf = []
+threshold_b = np.mean( [min(y), max(y)] )
+y_sup = []
+y_inf = []
 
-for i in range(0, len(sig_awgn)):
-    if sig_awgn[i] >= threshold:
-        sig_sup.append(sig_awgn[i])
+for i in range(0, len(y)):
+    if y[i] >= threshold_b:
+        y_sup.append(y[i])
     else:
-        sig_inf.append(sig_awgn[i])
+        y_inf.append(y[i])
 
-sig_sup = np.array(sig_sup)
-sig_inf = np.array(sig_inf)
-vlow = np.mean(sig_inf)
-vhi = np.mean(sig_sup)
+y_sup = np.array(y_sup)
+y_inf = np.array(y_inf)
+vlow = np.mean(y_inf)
+vhi = np.mean(y_sup)
 square = []
 
-for i in range(0, len(sig_awgn)):
-    if sig_awgn[i] >= threshold:
+for i in range(0, len(y)):
+    if y[i] >= threshold_b:
         square.append(vhi)
     else:
         square.append(vlow)
         
 square = np.array(square)
-plt.figure(8)
-plt.plot(square)
-        
-    
-    
+plot_signal(square, 1000, L, 8, 'Generated square signal')
 
+y_f = np.fft.fft(y, L)
+square_f = np.fft.fft(square, L)
+yh_f = y_f - square_f
+yh_f = yh_f[0:L//2]
+y_f = y_f[0:L//2]
+threshold_h = np.mean( [min(2**8/L * np.abs(yh_f)), max(2**8/L * np.abs(yh_f))] )
+maxim_h = sc.find_peaks(2**8/L * np.abs(yh_f), prominence=threshold_h)
+maxim_h = np.array(maxim_h[0])
+
+plt.figure(9)
+plt.subplot(2,1,1)
+plt.plot(f, 2**8/L * np.abs(y_f))
+plt.xlim(0, 5)
+plt.title('Global signal spectre')
+plt.subplot(2,1,2)
+plt.plot(f, 2**8/L * np.abs(yh_f))
+plt.plot(f[maxim_h], 2**8/L * np.abs(yh_f[maxim_h]), "x")
+plt.title('Global - square signal spectre')
+plt.xlim(0, 5)
+hr = f[maxim_h[0]]
+hr_min = hr*60
 
 #%% SEGMENTACIÓN DE LA SEÑAL PARA SIMULACIÓN DE VENTANAS
 
@@ -219,16 +238,13 @@ for i in range(0,iter+1):   # i toma valores entre 0 e iter
     print(i)
     if i < iter:
         y = sig_awgn[i*n_win:(i+1)*n_win]
-       # plot_signal_noise(y, y, fs, L, i)
+       # plot_signals(y, y, fs, L, i)
         
     else:
         y[0:resto] = sig_awgn[iter*n_win:iter*n_win+resto]
     
     
     
-
-        
-
 
                     
         
