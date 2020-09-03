@@ -62,11 +62,11 @@ h = fvtool(biquad_resp,'Fs',sample_rate);
 h.FrequencyScale = 'log';
 
 %% Análisis de señales de prueba
-signal_b = round(csvread('signal_b.txt'));
+signal_b = round(csvread('test_signals/original/signal_b.txt'));
 signal_b = signal_b';
-signal_h1 = readmatrix('signal_h1.txt');
+signal_h1 = readmatrix('test_signals/original/signal_h1.txt');
 signal_h1 = signal_h1(:,2);
-signal_h2 = readmatrix('signal_h2.txt');
+signal_h2 = readmatrix('test_signals/original/signal_h2.txt');
 
 fs1 = 200;
 fs2 = 500;
@@ -84,7 +84,7 @@ plot_signal(signal_bint, 1000, ' respiracion interpolada')
 plot_signal(signal_h1int, 1000, ' cardiaca 1 interpolada')
 plot_signal(sigmix, 1000, ' total')
 % Guardado de la señal suma
-writematrix(sigmix, 'signal_bh1.txt')
+writematrix(sigmix, 'test_signals/original/signal_bh1.txt')
 
 %% Interpolación para conseguir una fs de 1kHz (con la segunda señal cardiaca)
 signal_bint = interp(signal_b, 5);
@@ -96,11 +96,11 @@ plot_signal(signal_bint, 1000, ' respiratoria interpolada')
 plot_signal(signal_h2int, 1000, ' cardiaca 2 interpolada')
 plot_signal(sigmix2, 1000, ' total 2')
 % Guardado señal respiración interpolada
-writematrix(signal_bint, 'signal_bint.txt')
+writematrix(signal_bint, 'test_signals/original/signal_bint.txt')
 % Guardado de la señal cardíaca interpolada
-writematrix(signal_h2int, 'signal_h2int.txt')
+writematrix(signal_h2int, 'test_signals/original/signal_h2int.txt')
 % Guardado de la señal suma
-writematrix(sigmix2, 'signal_bh2.txt')
+writematrix(sigmix2, 'test_signals/original/signal_bh2.txt')
 
 %% Función para sobremuestrear las señales en un factor M (no se usa)
 function [signal_os] = oversample(signal, M)

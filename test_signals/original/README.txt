@@ -1,0 +1,6 @@
+- signal_b: señal de la respiración, muestreada a 200 Hz
+- signal_h1: señal cardíaca 1 (no usada), muestreada a 500 Hz
+- signal_h2: señal cardíaca 2, muestreada a 500 Hz
+- signal_bint: signal_b interpolada con M = 5 (simula muestreo a 1 kHz)
+- signal_h2int: signal_h2 interpolada con M = 2 (simula muestreo a 1 kHz)
+- signal_bhx: señales de respiración y cardíaca x interpoladas sumadas, 1 kHz

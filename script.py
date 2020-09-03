@@ -6,9 +6,12 @@ import numpy as np
 from numpy import loadtxt
 import matplotlib.pyplot as plt
 import scipy.signal as sc
+import neurokit2 as nk
 from mpldatacursor import datacursor
 
 plt.rcParams['axes.grid'] = True
+
+plt.close('all')
 
 # FUNCIONES
 
@@ -79,23 +82,31 @@ def plot_signals(sig1, sig2, fs, L, num, title):
 #------------------------------------------------------------------------------
 # LECTURA DE SEÑALES Y ADICIÓN DE RUIDO
 
-signal_b = loadtxt("signal_bint.txt", comments="#", delimiter=" ", unpack=False)
-signal_h2 = loadtxt("signal_h2int.txt", comments="#", delimiter=" ", unpack=False)
-signal = loadtxt("signal_bh2.txt", comments="#", delimiter=" ", unpack=False)
-                    
+signal_b = loadtxt("test_signals/original/signal_bint.txt", comments="#", delimiter=" ", unpack=False)
+signal_h2 = loadtxt("test_signals/original/signal_h2int.txt", comments="#", delimiter=" ", unpack=False)
+amp = max(signal_b)/max(signal_h2)
+fs = 1000
+
+if test == 1:
+    signal_b = k*signal_b
+
+elif test == 2:
+    signal_h2 = k*signal_h2
+
+signal = signal_b + signal_h2
+
 # Adicion de ruido blanco a la señal
 noise_mean = 0
-noise_desv = 20
+noise_desv = 0
 noise = np.random.normal(noise_mean, noise_desv, len(signal))
 sigb_awgn = np.around(signal_b + noise)
 sigh2_awgn = np.around(signal_h2 + noise)
 sig_awgn = np.around(signal + noise)
 norm = np.max(sig_awgn)
 
-fs = 1000;
-Ts = 1/fs;
+Ts = 1/fs
 t = np.arange(0, len(signal)*Ts, Ts)
-L = 2**18;
+L = 2**18
 signal_f = np.fft.fft(signal, L)
 sig_awgn_f = np.fft.fft(sig_awgn, L)
 f = np.linspace(0.0, fs/2.0, L//2)
@@ -106,7 +117,10 @@ plot_signals(signal/norm, sig_awgn/norm, fs, L, 3, 'Total signal with and withou
 
 #%% OBTENCIÓN DE LA FRECUENCIA RESPIRATORIA
 
-y = np.around(signal + noise);
+for i in range(5,8):
+    plt.close(i)
+
+y = np.around(signal + noise)
 y = y/np.max(y)
 
 # Un ritmo cardiaco normal está en [50, 200] pulsaciones/min
@@ -146,7 +160,8 @@ datacursor(draggable=True)
 plt.show()
 
 # Usando SOS: Mejor opción cuando se aumenta el orden del filtro
-sos = sc.butter(3, [fL/fN, fH/fN], btype='band', output='sos')
+#sos = sc.butter(3, [fL/fN, fH/fN], btype='band', output='sos')
+sos = sc.butter(3, fH/fN, btype='low', output='sos')
 w, h = sc.sosfreqz(sos, worN=L, fs=1000)
 
 plt.figure(6)
@@ -168,6 +183,7 @@ plt.axis('tight')
 datacursor(draggable=True)
 plt.show()
 
+
 y_filt = sc.sosfilt(sos, y)
 plot_signals(y, y_filt, fs, L, 7, 'Unfiltered and filtered signals')
 
@@ -178,7 +194,10 @@ ibr = np.where(2**8/L * np.abs(y_filt_f) == maxim_b)
 br = f[ibr]
 br_min = br*60  # Resultado del ritmo respiratorio en resp/min
 
-#%% OBTENCIÓN DE LA FRECUENCIA CARDÍACA
+#%% OBTENCIÓN DE LA FRECUENCIA CARDÍACA (MÉTODO 1)
+
+for i in range(8, 10):
+    plt.close(i)
 
 threshold_b = np.mean( [min(y), max(y)] )
 y_sup = []
@@ -210,22 +229,86 @@ square_f = np.fft.fft(square, L)
 yh_f = y_f - square_f
 yh_f = yh_f[0:L//2]
 y_f = y_f[0:L//2]
+square_f = square_f[0:L//2]
 threshold_h = np.mean( [min(2**8/L * np.abs(yh_f)), max(2**8/L * np.abs(yh_f))] )
 maxim_h = sc.find_peaks(2**8/L * np.abs(yh_f), prominence=threshold_h)
 maxim_h = np.array(maxim_h[0])
 
 plt.figure(9)
-plt.subplot(2,1,1)
+plt.subplot(3,1,1)
 plt.plot(f, 2**8/L * np.abs(y_f))
 plt.xlim(0, 5)
 plt.title('Global signal spectre')
-plt.subplot(2,1,2)
+
+plt.subplot(3,1,2)
+plt.plot(f, 2**8/L * np.abs(square_f))
+plt.xlim(0, 5)
+plt.title('Square signal spectre')
+
+plt.subplot(3,1,3)
 plt.plot(f, 2**8/L * np.abs(yh_f))
 plt.plot(f[maxim_h], 2**8/L * np.abs(yh_f[maxim_h]), "x")
 plt.title('Global - square signal spectre')
 plt.xlim(0, 5)
 hr = f[maxim_h[0]]
 hr_min = hr*60
+
+
+#%% OBTENCIÓN DE LA FRECUENCIA CARDÍACA (MÉTODO 2)
+
+for i in range(8, 10):
+    plt.close(i)
+
+i_sup = sc.find_peaks(y_filt)
+i_inf = sc.find_peaks(-y_filt)
+i_sup = np.array(i_sup[0])
+i_inf = np.array(i_inf[0])
+
+vhi = np.mean(y_filt[i_sup])
+vlow = np.mean(y_filt[i_inf])
+threshold_b = np.mean( [vhi, vlow] )
+square = []
+
+for i in range(0, len(y)):
+    if y_filt[i] >= threshold_b:
+        square.append(vhi)
+    else:
+        square.append(vlow)
+        
+square = np.array(square)
+plot_signal(square, 1000, L, 8, 'Generated square signal')
+
+y_f = np.fft.fft(y, L)
+square_f = np.fft.fft(square, L)
+yh_f = np.abs(y_f) - np.abs(square_f)
+yh_f = yh_f[0:L//2]
+y_f = y_f[0:L//2]
+square_f = square_f[0:L//2]
+threshold_h = np.mean( [min(2**8/L * yh_f), max(2**8/L * yh_f)] )
+maxim_h = sc.find_peaks(2**8/L * yh_f, prominence=threshold_h)
+maxim_h = np.array(maxim_h[0])
+
+plt.figure(9)
+plt.subplot(3,1,1)
+plt.plot(f, 2**8/L * np.abs(y_f))
+plt.xlim(0, 5)
+plt.title('Global signal spectre')
+
+plt.subplot(3,1,2)
+plt.plot(f, 2**8/L * np.abs(square_f))
+plt.xlim(0, 5)
+plt.title('Square signal spectre')
+
+plt.subplot(3,1,3)
+plt.plot(f, 2**8/L * yh_f)
+# plt.plot(f[maxim_h], 2**8/L * yh_f[maxim_h], "x")
+plt.title('Global - square signal spectre')
+plt.xlim(0, 5)
+hr = f[maxim_h[0]]
+hr_min = hr*60
+
+
+
 
 #%% SEGMENTACIÓN DE LA SEÑAL PARA SIMULACIÓN DE VENTANAS
 
@@ -235,7 +318,6 @@ iter = int(np.trunc(l/n_win))  # número de ventanas completas
 resto = l % n_win        # numero elementos de última ventana
 
 for i in range(0,iter+1):   # i toma valores entre 0 e iter
-    print(i)
     if i < iter:
         y = sig_awgn[i*n_win:(i+1)*n_win]
        # plot_signals(y, y, fs, L, i)
@@ -250,3 +332,15 @@ for i in range(0,iter+1):   # i toma valores entre 0 e iter
         
 
 #%%
+test = 1
+k = 10
+runcell(1)
+runcell(2)
+runcell(3)
+
+#%%
+test = 0
+k = 1
+runcell(1)
+runcell(2)
+runcell(4)
