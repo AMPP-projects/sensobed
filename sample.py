@@ -2,45 +2,41 @@ import RPi.GPIO as GPIO
 import time
 import board
 import busio
-import adafruit_ads1x15.ads1115 as ADS
-from adafruit_ads1x15.ads1x15 import Mode
-from adafruit_ads1x15.analog_in import AnalogIn
-import ustruct
+import ads1115_mod.ads1115 as ADS
+from ads1115_mod.ads1x15 import Mode
+from ads1115_mod.analog_in import AnalogIn
 
-def _write_register(self, register, value):
-    data = ustruct.pack('>BH', register, value)
-    self.i2c.writeto(self.address, data)
+RDY = 17 # Pin de entrada del aviso CONVERSION READY
+RATE = 250
 
 GPIO.setup(RDY, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-RDY = 17
-RATE = 250
-REGISTER_CONVERT = const(0x00)
-REGISTER_CONFIG = const(0x01)
-REGISTER_LOWTHRESH = const(0x02)
-REGISTER_HITHRESH = const(0x03)
-LOWTHRESH = const(0x0000)
-HITHRESH = const(0x8000)
-COMP_QUE = const(0x0000)
-
-# Create the I2C bus
+# Crea el bus I2C
 i2c = busio.I2C(board.SCL, board.SDA)
-
-# Create the ADC object using the I2C bus
-ads = ADS.ADS1115(i2c)
-
-# Create single-ended input on channel 0
+# Crea el objeto ADS usando el bus I2C
+ads = ADS.ADS1115(i2c, ConvRdy=1)
+# Crea un canal de entrada "single-ended" en el canal 0
 chan = AnalogIn(ads, ADS.P0)
+# Establece el modo de conversión continua
 ads.mode = Mode.CONTINUOUS
+# Establece la tasa de muestreo
 ads.data_rate = RATE
+# Establece FSR
+    # The ADS1015 and ADS1115 both have the same gain options.
+    #
+    #       GAIN    RANGE (V)
+    #       ----    ---------
+    #        2/3    +/- 6.144
+    #          1    +/- 4.096
+    #          2    +/- 2.048
+    #          4    +/- 1.024
+    #          8    +/- 0.512
+    #         16    +/- 0.256
+ads.gain = 2/3
 
-# Create differential input between channel 0 and 1
-#chan = AnalogIn(ads, ADS.P0, ADS.P1)
+print(chan.value) # Lectura incial para configurar el registro CONFIG
 
 print("{:>5}\t{:>5}".format('raw', 'v'))
-
-#write_register(self, reg, value):
-ads.gain = 2/3
 
 while True:
     print("{:>5}\t{:>5.6f}".format(chan.value, chan.voltage))
