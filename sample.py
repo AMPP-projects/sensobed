@@ -2,12 +2,24 @@ import RPi.GPIO as GPIO
 import time
 import board
 import busio
+
+#Biblioteca original
+# import adafruit_ads1x15.ads1115 as ADS
+# from adafruit_ads1x15.ads1x15 import Mode
+# from adafruit_ads1x15.analog_in import AnalogIn
+
+#Biblioteca modificada
 import ads1115_mod.ads1115 as ADS
 from ads1115_mod.ads1x15 import Mode
 from ads1115_mod.analog_in import AnalogIn
 
+
+
+def my_callback(channel):
+    print('Conversion ready')
+
 RDY = 17 # Pin de entrada del aviso CONVERSION READY
-RATE = 250
+RATE = 8
 
 GPIO.setup(RDY, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
@@ -15,6 +27,7 @@ GPIO.setup(RDY, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 i2c = busio.I2C(board.SCL, board.SDA)
 # Crea el objeto ADS usando el bus I2C
 ads = ADS.ADS1115(i2c, ConvRdy=1)
+#ads = ADS.ADS1115(i2c)
 # Crea un canal de entrada "single-ended" en el canal 0
 chan = AnalogIn(ads, ADS.P0)
 # Establece el modo de conversión continua
@@ -37,6 +50,7 @@ ads.gain = 2/3
 print(chan.value) # Lectura incial para configurar el registro CONFIG
 
 print("{:>5}\t{:>5}".format('raw', 'v'))
+GPIO.add_event_detect(RDY, GPIO.FALLING, callback=my_callback)
 
 while True:
     print("{:>5}\t{:>5.6f}".format(chan.value, chan.voltage))
