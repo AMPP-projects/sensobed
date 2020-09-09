@@ -13,10 +13,18 @@ import ads1115_mod.ads1115 as ADS
 from ads1115_mod.ads1x15 import Mode
 from ads1115_mod.analog_in import AnalogIn
 
+# Cuenta del numero de conversiones
+conv = 0 
 
-
+# Rutina de interrupción
 def my_callback(channel):
-    print('Conversion ready')
+    global conv
+    conv += 1
+    print(conv)
+    if conv == N_conv:
+        # apaga conversiones
+    print("{:>5}\t{:>5.6f}".format(chan.value, chan.voltage))
+    
 
 RDY = 17 # Pin de entrada del aviso CONVERSION READY
 RATE = 8
@@ -47,11 +55,11 @@ ads.data_rate = RATE
     #         16    +/- 0.256
 ads.gain = 2/3
 
-print(chan.value) # Lectura incial para configurar el registro CONFIG
+print(chan.value) # Lectura inicial para configurar el registro CONFIG
 
 print("{:>5}\t{:>5}".format('raw', 'v'))
 GPIO.add_event_detect(RDY, GPIO.FALLING, callback=my_callback)
 
-while True:
-    print("{:>5}\t{:>5.6f}".format(chan.value, chan.voltage))
-    time.sleep(0.5)
+while a < 10:
+    #time.sleep(0.5)
+    a = a + 1
