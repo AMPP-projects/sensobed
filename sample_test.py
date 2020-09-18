@@ -22,26 +22,23 @@ n_1 = []
 
 # Rutina de interrupción
 def my_callback(channel):
-    global conv, endSampling, nConv, vueltas
+    global ads, chan, conv, endSampling, nConv, vueltas
     conv += 1
     print(conv)
-    if conv >= nConv:
+    n.append(int(chan.value))
+    
+    if conv == nConv:
         # apaga conversiones
-        endSampling = 1
         conv = 0
         vueltas += 1
-        print('Vuelta: %d' % vueltas)
+        print('Vuelta: %d \n' % vueltas)
         ads.mode = Mode.SINGLE
         chan.escribir_reg
+        #chan.value
         print('modo single: %s' % str(ads.mode))
-        
-    else:
-        n.append(int(chan.value))
-        fileN = open("sample/n.txt", "a")
-        fileN.write("%s \n" % str(chan.value))
-        fileN.close()
-        #print("{:>5}\t{:>5.6f}".format(chan.value, chan.voltage))
-    
+        endSampling = 1
+        print('End sampling %d \n' % endSampling)
+
 RDY = 17 # Pin de entrada del aviso CONVERSION READY
 RATE = 8 # Tasa de muestreo (SPS)
 
@@ -77,32 +74,23 @@ print(chan.value)
 GPIO.add_event_detect(RDY, GPIO.FALLING, callback=my_callback)
 
 num = 0
+nVueltas = 3
 
-while vueltas < 1:
-    #time.sleep(0.5)
-    # PROCESAMIENTO
-    fileN_1 = open("sample/n-1.txt", "r+")
-    samples = fileN_1.read()
-    fileN_1.close()
-    #procSamples = samples*2
-    
+while vueltas <= nVueltas:
+    print('Entro en while vueltas: %d' % vueltas)
+    print('Waiting')
     while endSampling == 0:
-        #print('Waiting %d \n' % num)
         num += num
     endSampling = 0
-    # INICIALIZACIóN
-    # Se transfieren las muestras n a las n-1
-    fileN = open("sample/n.txt", "r+")
-    newSamples = fileN.read()
-    fileN.truncate(0) # Elimina muestras ya copiada
-    fileN.close()
-    
-    fileN_1 = open("sample/n-1.txt", "w+")
-    fileN_1.write(newSamples)
-    fileN_1.close()
-    # Reanudar muestreo
-    ads.mode = Mode.CONTINUOUS
-    chan.escribir_reg
+    print('End sampling %d \n' % endSampling)
+    n_1 = n
+    n = []
+    #print('Vueltas: %d' % vueltas)
+    if vueltas >= nVueltas:
+        ads.mode = Mode.SINGLE
+    else:
+        ads.mode = Mode.CONTINUOUS
+    #chan.escribir_reg
+    chan.value
     print('modo continuo: %s' % ads.mode)
-    
     

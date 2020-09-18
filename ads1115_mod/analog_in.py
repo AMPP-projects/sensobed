@@ -69,3 +69,18 @@ class AnalogIn:
         """Returns the voltage from the ADC pin as a floating point value."""
         volts = self.value * _ADS1X15_PGA_RANGE[self._ads.gain] / 32767
         return volts
+    
+    def escribir_reg(self, ConvRdy):
+        config |= (pin & 0x07) << _ADS1X15_CONFIG_MUX_OFFSET
+        config |= _ADS1X15_CONFIG_GAIN[self.gain]
+        config |= self.mode
+        config |= self.rate_config[self.data_rate]
+        #config |= _ADS1X15_CONFIG_COMP_QUE_DISABLE
+        if ConvRdy == 1:
+            self.ConvRdy = const(0x0000)
+        else:
+            self.ConvRdy = const(0x0003)
+        config |= self.ConvRdy
+        self._write_register(_ADS1X15_POINTER_CONFIG, config)
+        self._write_register(_REGISTER_LOWTHRESH, 0x0000)
+        self._write_register(_REGISTER_HITHRESH, 0x8000)
