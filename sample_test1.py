@@ -1,3 +1,8 @@
+# DETIENE EL MUESTREO PONIENDO EL MODO SINGLE
+
+# ERRORES
+# 1) 
+
 import RPi.GPIO as GPIO 
 import time
 import board
@@ -86,11 +91,12 @@ while vueltas <= nVueltas:
     n_1 = n
     n = []
     #print('Vueltas: %d' % vueltas)
-    if vueltas >= nVueltas:
+    if vueltas > nVueltas:
         ads.mode = Mode.SINGLE
+        print('modo single: %s' % ads.mode)
     else:
         ads.mode = Mode.CONTINUOUS
+        print('modo continuo: %s' % ads.mode)
     #chan.escribir_reg
     chan.value
-    print('modo continuo: %s' % ads.mode)
     
