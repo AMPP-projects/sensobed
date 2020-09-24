@@ -230,8 +230,25 @@ yh_f = y_f - square_f
 yh_f = yh_f[0:L//2]
 y_f = y_f[0:L//2]
 square_f = square_f[0:L//2]
-threshold_h = np.mean( [min(2**8/L * np.abs(yh_f)), max(2**8/L * np.abs(yh_f))] )
-maxim_h = sc.find_peaks(2**8/L * np.abs(yh_f), prominence=threshold_h)
+
+fh_min = hrate_min/60
+fh_max = hrate_max/60
+dist1 = np.abs(f-fh_min)
+min1 = np.min(dist1)
+idx1 = np.where(dist1 == min1)
+idx1 = idx1[0]
+idx1 = idx1[0]
+dist2 = np.abs(f-fh_max)
+min2 = np.min(dist2)
+idx2 = np.where(dist2 == min2)
+idx2 = idx2[0]
+idx2 = idx2[0]
+
+f_range = f[idx1:idx2]
+yh_f_range = yh_f[idx1:idx2]
+
+threshold_h = np.mean( [min(2**8/L * np.abs(yh_f_range)), max(2**8/L * np.abs(yh_f_range))] )
+maxim_h = sc.find_peaks(2**8/L * np.abs(yh_f_range), prominence=threshold_h)
 maxim_h = np.array(maxim_h[0])
 
 plt.figure(9)
@@ -246,11 +263,11 @@ plt.xlim(0, 5)
 plt.title('Square signal spectre')
 
 plt.subplot(3,1,3)
-plt.plot(f, 2**8/L * np.abs(yh_f))
-plt.plot(f[maxim_h], 2**8/L * np.abs(yh_f[maxim_h]), "x")
+plt.plot(f_range, 2**8/L * np.abs(yh_f_range))
+plt.plot(f_range[maxim_h], 2**8/L * np.abs(yh_f_range[maxim_h]), "x")
 plt.title('Global - square signal spectre')
 plt.xlim(0, 5)
-hr = f[maxim_h[0]]
+hr = f_range[maxim_h[0]]
 hr_min = hr*60
 
 
@@ -333,7 +350,7 @@ for i in range(0,iter+1):   # i toma valores entre 0 e iter
 
 #%%
 test = 1
-k = 10
+k = 2
 runcell(1)
 runcell(2)
 runcell(3)

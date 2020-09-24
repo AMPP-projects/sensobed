@@ -77,6 +77,14 @@ nSlot = 3
 
 while num <= nSlot:
     print('Entro en while num: %d' % num)
+    
+    # PROCESAMIENTO
+    
+    
+    
+    # FIN DEL PROCESAMIENTO
+    
+    
     print('Waiting')
     
     while endSampling == 0:
