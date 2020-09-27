@@ -1,6 +1,6 @@
 # En esta version:
 # - Se muestrea pero se usan las señales de test para el procesamiento
-# - No se hace segmentación (el tamaño de la ventana es igual al tamaño total de las señales de test)
+# - Se hace segmentacion: cada cuatro resultados de hrate se saca uno de brate
 
 import RPi.GPIO as GPIO 
 import time
@@ -44,8 +44,7 @@ p = []
 # Rutina de interrupcion
 def my_callback(channel):
     global RDY, ads, chan, conv, endSampling, nConv, vueltas
-    if (conv % 200) == 0:
-        print(conv)
+    print(conv)
     n.append(int(chan.value))
     p.append(yn[conv])
     conv += 1
