@@ -1,6 +1,7 @@
 # En esta version:
 # - Se muestrea pero se usan las señales de test para el procesamiento
 # - No se hace segmentación (el tamaño de la ventana es igual al tamaño total de las señales de test)
+##########################################################################################################
 
 import RPi.GPIO as GPIO 
 import time
@@ -14,12 +15,13 @@ from ads1115_mod.analog_in import AnalogIn
 from numpy import loadtxt
 import scipy.signal as sc
 
-#Biblioteca original
+# Biblioteca original
 # import adafruit_ads1x15.ads1115 as ADS
 # from adafruit_ads1x15.ads1x15 import Mode
 # from adafruit_ads1x15.analog_in import AnalogIn
 
-# Lectura de senales test
+###############################  PREPARACION SENALES DE TEST  #############################################
+
 signal_b = loadtxt("test_signals/original/signal_bint.txt", comments="#", delimiter=" ", unpack=False)
 signal_h2 = loadtxt("test_signals/original/signal_h2int.txt", comments="#", delimiter=" ", unpack=False)
 y = signal_b + signal_h2
@@ -32,6 +34,8 @@ y = 2**15/np.max(y) * y
 yn = np.around(y + noise)
 print('Longitud %d \n' % len(yn))
 
+############################# FIN PREPARACION SENALES DE TEST  ############################################
+
 conv = 0 # Contador del numero de conversiones
 nConv = len(yn) # Conversiones totales de una ventana
 endSampling = 0
@@ -41,26 +45,10 @@ m = np.zeros(len(y))
 m[1] = 1
 p = []
 
-# Rutina de interrupcion
-def my_callback(channel):
-    global RDY, ads, chan, conv, endSampling, nConv, vueltas
-    if (conv % 200) == 0:
-        print(conv)
-    n.append(int(chan.value))
-    p.append(yn[conv])
-    conv += 1
-    
-    if conv == nConv:
-        # apaga conversiones
-        conv = 0
-        GPIO.remove_event_detect(RDY)
-        print('Interrupt off')
-        endSampling = 1
-        print('End sampling %d \n' % endSampling)
+#####################################  CONFIGURACION ADC  ##################################
 
 RDY = 17 # Pin de entrada del aviso CONVERSION READY
 RATE = 860 # Tasa de muestreo (SPS)
-
 # Establece pin de entrada RDY
 GPIO.setup(RDY, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 # Crea el bus I2C
@@ -87,16 +75,13 @@ ads.data_rate = RATE
     #         16    +/- 0.256
 ads.gain = 2/3
 
+################################### FIN CONFIGURACION ADC  ###############################
+
 # Lectura inicial para configurar el registro CONFIG
-print(chan.value) 
-# Establece una interrupcion por flanco de bajada en el pin RDY
-GPIO.add_event_detect(RDY, GPIO.FALLING, callback=my_callback)
-
-num = 0
-nSlot = 1
+print('Lectura inicial %d' % chan.value) 
 
 
-############### INICIALIZACION PROCESAMIENTO ####################
+########################### INICIALIZACION PROCESAMIENTO #################################
 
 # Un ritmo cardiaco normal esta en [50, 200] pulsaciones/min
 # Un ritmo de respiracion normal esta en [10, 40] respiraciones/min
@@ -118,42 +103,68 @@ sos = sc.butter(3, [fL/fN, fH/fN], btype='band', output='sos')
 #sos = sc.butter(3, fH/fN, btype='low', output='sos')
 w, h = sc.sosfreqz(sos, worN=L, fs=1000)
 
-##################### FIN DEL PROCESAMIENTO  #######################
+########################## FIN INICIALIZACION PROCESAMIENTO  ##########################
 
+
+#####################  RUTINA INTERRUPCION ############################################
+
+def my_callback(channel):
+    global RDY, ads, chan, conv, endSampling, nConv, vueltas
+    if (conv % 1000) == 0:
+        print(conv)
+    n.append(int(chan.value))
+    p.append(yn[conv])
+    conv += 1
+    
+    if conv == nConv:
+        # apaga conversiones
+        conv = 0
+        GPIO.remove_event_detect(RDY)
+        print('Interrupt off')
+        endSampling = 1
+        print('End sampling %d \n' % endSampling)
+        
+#####################  FIN RUTINA INTERRUPCION ###########################################
+
+# Establece una interrupcion por flanco de bajada en el pin RDY
+GPIO.add_event_detect(RDY, GPIO.FALLING, callback=my_callback)
+
+num = 0
+nSlot = 1
 
 while num <= nSlot:
     #print('Entro en while num: %d' % num)
     
-    ###################### PROCESAMIENTO ############################
+    ######################################### PROCESAMIENTO ########################################
     
-    m_filt = sc.sosfilt(sos, m)
-    m_filt_f = np.fft.fft(m_filt, L)
-    m_filt_f = m_filt_f[0:L//2]
-    
+    mFilt = sc.sosfilt(sos, m)
+    mFiltF = np.fft.fft(mFilt, L)
+    mFiltF = mFiltF[0:L//2]
+   
     # Pico maximo en el espectro (respiracion)
-    maxim_b = max(2**8/L * np.abs(m_filt_f))
-    ibr = np.where(2**8/L * np.abs(m_filt_f) == maxim_b)
+    maxim_b = max( np.abs(mFiltF))
+    ibr = np.where(np.abs(mFiltF) == maxim_b)
     br = f[ibr]
     # Resultado del ritmo respiratorio en resp/min
-    br_min = br*60
+    brMinute = br*60
     
     # OBTENCION DE LA FRECUENCIA CARDIACA (METODO 1: restar cuadrada)
     # threshold para la creacion de la cuadrada
     threshold_b = np.mean( [min(m), max(m)] )
-    m_sup = []
-    m_inf = []
+    mSup = []
+    mInf = []
     # creacion de la cuadrada
     for i in range(0, len(m)):
         if m[i] >= threshold_b:
-            m_sup.append(m[i])
+            mSup.append(m[i])
         else:
-            m_inf.append(m[i])
+            mInf.append(m[i])
     # creacion del array a partir de las listas
-    m_sup = np.array(m_sup)
-    m_inf = np.array(m_inf)
+    mSup = np.array(mSup)
+    mInf = np.array(mInf)
     # medias de los vectores superiores e inferiores
-    vlow = np.mean(m_inf)
-    vhi = np.mean(m_sup)
+    vlow = np.mean(mInf)
+    vhi = np.mean(mSup)
     square = []
 
     for i in range(0, len(m)):
@@ -164,14 +175,14 @@ while num <= nSlot:
             
     square = np.array(square)
     # Resta del espectro de la cuadrada creada
-    m_f = np.fft.fft(m, L)
-    square_f = np.fft.fft(square, L)
-    mh_f = m_f - square_f
+    mF = np.fft.fft(m, L)
+    squareF = np.fft.fft(square, L)
+    mhF = mF - squareF
     # Parte positiva del espectro de la senal resta
-    mh_f = mh_f[0:L//2]
-    m_f = m_f[0:L//2]
-    square_f = square_f[0:L//2]
-    
+    mhF = mhF[0:L//2]
+    mF = mF[0:L//2]
+    squareF = squareF[0:L//2]
+    # Restringe el espectro de la senal cardiaca a fh_min y fh_max
     fh_min = hrate_min/60
     fh_max = hrate_max/60
     dist1 = np.abs(f-fh_min)
@@ -185,27 +196,29 @@ while num <= nSlot:
     idx2 = idx2[0]
     idx2 = idx2[0]
 
-    f_range = f[idx1:idx2]
-    mh_f_range = mh_f[idx1:idx2]
-
-    threshold_h = np.mean( [min(2**8/L * np.abs(mh_f_range)), max(2**8/L * np.abs(mh_f_range))] )
-    maxim_h = sc.find_peaks(2**8/L * np.abs(mh_f_range), prominence=threshold_h)
-    maxim_h = np.array(maxim_h[0])
-    if num != 0:
-        hr = f_range[maxim_h[0]]
-        hr_min = hr*60
-        print('Frecuencia cardiaca %d \n' % hr_min)
-        print('Frec. respiratoria %d' % br_min)
+    fRange = f[idx1:idx2]
+    mhFRange = mhF[idx1:idx2]
+    # Obtiene umbral a partir de hacer la media al valor mínimo y máximo del espectro de la senal cardiaca
+    threshold_h = np.mean( [min(np.abs(mhFRange)), max(np.abs(mhFRange))] )
+    maxim_h = sc.find_peaks(np.abs(mhFRange), prominence=threshold_h)
+    maxim_h = maxim_h[0] # Nos quedamos con el primer maximo del espectro
+    if num == 0:
+        print('No hay resultados disponibles')
+    else:  # Solo si al menos se ha muestreado una vez se sacan resultados
+        hr = fRange[maxim_h[0]]
+        hrMinute = hr*60
+        print('Frecuencia cardiaca: %d \n' % hrMinute)
+        print('Frec. respiratoria: %d' % brMinute)
     
-    ############# FIN DEL PROCESAMIENTO ############################
+    ############# FIN DEL PROCESAMIENTO ################################################################
     
-    
-    #print('Waiting')
-    
+    # Espera a que termine el muestreo (entra en caso de que el procesamiento sea mas rapido)
     while endSampling == 0:
-        a = 0    
+        p
+    
     endSampling = 0
     #print('End sampling %d \n' % endSampling)
+    # Transfiere muestras actuales a muestras anteriores
     m = n
     n = []
     m = p
@@ -215,4 +228,4 @@ while num <= nSlot:
         GPIO.add_event_detect(RDY, GPIO.FALLING, callback=my_callback)
         print('Interrupt on')   
     num += 1
-        
+    
