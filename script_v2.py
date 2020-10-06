@@ -143,7 +143,8 @@ GPIO.add_event_detect(RDY, GPIO.FALLING, callback=my_callback)
 
 num = 0
 numSampling = 0
-nSlot = len(yn)/nhConv
+#nSlot = len(yn)/nhConv
+nSlot = 15
 
 while num <= nSlot:
     #print('Entro en while num: %d' % num)
@@ -154,7 +155,7 @@ while num <= nSlot:
         m = mh
     else:
         m = mb
-    
+        
     mFilt = sc.sosfilt(sos, m)
     mFiltF = np.fft.fft(mFilt, L)
     mFiltF = mFiltF[0:L//2]
