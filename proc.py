@@ -102,6 +102,12 @@ signal_b = loadtxt("test_signals/original/signal_bint.txt", comments="#", delimi
 signal_h2 = loadtxt("test_signals/original/signal_h2int.txt", comments="#", delimiter=" ", unpack=False)
 amp = max(signal_b)/max(signal_h2)
 fs = 1000
+f = 50
+n = np.arange(0, len(signal_b))
+# Introducción de un ruido de 50 Hz con una amplitud A
+A = 30e-3
+FS = 6.144
+sig50 = A/FS * 2**15 * np.sin(2*np.pi*f*n/fs)
 test = 0
 
 if test == 1:
@@ -110,7 +116,7 @@ if test == 1:
 elif test == 2:
     signal_h2 = k*signal_h2
 
-signal = signal_b + signal_h2
+signal = signal_b + signal_h2 + sig50
 
 # Adicion de ruido blanco a la señal
 noise_mean = 0
@@ -217,7 +223,7 @@ br_min = br*60  # Resultado del ritmo respiratorio en resp/min
 
 #%% OBTENCIÓN DE LA FRECUENCIA CARDÍACA (MÉTODO 1)
 
-for i in range(8, 10):
+for i in range(9, 10):
     plt.close(i)
 
 threshold_b = np.mean( [min(y), max(y)] )
@@ -243,7 +249,7 @@ for i in range(0, len(y)):
         square.append(vlow)
         
 square = np.array(square)
-plot_signal(square, 1000, L, 8, 'Generated square signal')
+plot_signal(square, 1000, L, 9, 'Generated square signal')
 
 y_f = np.fft.fft(y, L)
 square_f = np.fft.fft(square, L)
@@ -272,7 +278,7 @@ threshold_h = np.mean( [min(2**8/L * np.abs(yh_f_range)), max(2**8/L * np.abs(yh
 maxim_h = sc.find_peaks(2**8/L * np.abs(yh_f_range), prominence=threshold_h)
 maxim_h = np.array(maxim_h[0])
 
-plt.figure(9)
+plt.figure(10)
 plt.subplot(3,1,1)
 plt.plot(f, 2**8/L * np.abs(y_f))
 plt.xlim(0, 5)
