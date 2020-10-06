@@ -5,6 +5,10 @@
 import numpy as np
 from numpy import loadtxt
 import matplotlib.pyplot as plt
+plt.rcParams.update({'font.size': 15})
+from matplotlib import ticker
+formatter = ticker.ScalarFormatter(useMathText=True)
+formatter.set_scientific(True) 
 import scipy.signal as sc
 import neurokit2 as nk
 from mpldatacursor import datacursor
@@ -23,20 +27,23 @@ def plot_signal(signal, fs, L, num, title):
     f = np.linspace(0.0, fs/2.0, L//2)
     
     plt.figure(num)
-    plt.suptitle(title)
+   # plt.suptitle(title)
     plt.subplot(2,1,1)
     plt.plot(t, signal)
     plt.title('Time signal')
     plt.ylabel('Descrete value')
     plt.xlabel('Time (s)')
+    plt.xlim([0, 10])
     
     plt.subplot(2,1,2)
     plt.plot(f, 2**8/L * np.abs(signal_f[0:L//2]))
     plt.title('Signal FFT')
     plt.ylabel('Descrete value')
-    plt.xlabel('Frecuencia (Hz)')
-    plt.xlim([0, 5])
+    plt.xlabel('Frequency (Hz)')
+    plt.xlim([0, 1.5])
     
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(4,4))
+    plt.tight_layout(h_pad = -1)
     plt.show()
 
 # Dibuja dos señales y sus espectros
@@ -47,36 +54,45 @@ def plot_signals(sig1, sig2, fs, L, num, title):
     sig1_f = np.fft.fft(sig1, L)
     sig2_f = np.fft.fft(sig2, L)
     f = np.linspace(0.0, fs/2.0, L//2)
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(4,4))
     
     plt.figure(num)
-    plt.suptitle(title)
-    plt.subplot(2,2,1)
+    #plt.suptitle(title)
+    plt.subplot(2,1,1)
     plt.plot(t, sig1)
-    plt.title('Signal 1 in time')
+    plt.title('Unfiltered signal in time')
     plt.ylabel('Descrete value')
     plt.xlabel('Time (s)')
+    plt.xlim([0, 10])
     
-    plt.subplot(2,2,2)
+    plt.subplot(2,1,2)
     plt.plot(f, 2**8/L * np.abs(sig1_f[0:L//2]))
-    plt.title('Signal 1 FFT')
+    plt.title('Unfiltered signal FFT')
     plt.ylabel('Descrete value')
-    plt.xlabel('Frecuencia (Hz)')
-    plt.xlim([0, 5])
+    plt.xlabel('Frequency (Hz)')
+    plt.xlim([0, 1.5])
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(4,4))
+    plt.tight_layout(h_pad = 0, w_pad = -3)
     
-    plt.subplot(2,2,3)
+    
+    plt.figure(num+1)
+    plt.subplot(2,1,1)
     plt.plot(t, sig2)
-    plt.title('Signal 2 in time')
+    plt.title('Filtered signal in time')
     plt.ylabel('Descrete value')
     plt.xlabel('Time (s)')
+    plt.xlim([0, 10])
     
     
-    plt.subplot(2,2,4)
+    plt.subplot(2,1,2)
     plt.plot(f, 2**8/L * np.abs(sig2_f[0:L//2]))
-    plt.title('Signal 2 FFT')
+    plt.title('Filtered signal FFT')
     plt.ylabel('Descrete value')
-    plt.xlabel('Frecuencia (Hz)')
-    plt.xlim([0, 5])
-    
+    plt.xlabel('Frequency (Hz)')
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(4,4))
+    plt.xlim([0, 1.5])
+   
+    plt.tight_layout(h_pad = 0, w_pad = -3)
     plt.show()
 
 #------------------------------------------------------------------------------
@@ -86,6 +102,7 @@ signal_b = loadtxt("test_signals/original/signal_bint.txt", comments="#", delimi
 signal_h2 = loadtxt("test_signals/original/signal_h2int.txt", comments="#", delimiter=" ", unpack=False)
 amp = max(signal_b)/max(signal_h2)
 fs = 1000
+test = 0
 
 if test == 1:
     signal_b = k*signal_b
@@ -97,7 +114,7 @@ signal = signal_b + signal_h2
 
 # Adicion de ruido blanco a la señal
 noise_mean = 0
-noise_desv = 0
+noise_desv = 50
 noise = np.random.normal(noise_mean, noise_desv, len(signal))
 sigb_awgn = np.around(signal_b + noise)
 sigh2_awgn = np.around(signal_h2 + noise)
@@ -111,9 +128,9 @@ signal_f = np.fft.fft(signal, L)
 sig_awgn_f = np.fft.fft(sig_awgn, L)
 f = np.linspace(0.0, fs/2.0, L//2)
 
-plot_signals(signal_b/norm, sigb_awgn/norm, fs, L, 1, 'Breathing signal with and without noise')
-plot_signals(signal_h2/norm, sigh2_awgn/norm, fs, L, 2, 'Heart signal with and without noise')
-plot_signals(signal/norm, sig_awgn/norm, fs, L, 3, 'Total signal with and without noise')
+plot_signal(signal_b, fs, L, 1, 'Breathing signal with and without noise')
+plot_signal(signal_h2, fs, L, 2, 'Heart signal with and without noise')
+plot_signals(signal, sig_awgn, fs, L, 3, 'Total signal with and without noise')
 
 #%% OBTENCIÓN DE LA FRECUENCIA RESPIRATORIA
 
@@ -121,7 +138,7 @@ for i in range(5,8):
     plt.close(i)
 
 y = np.around(signal + noise)
-y = y/np.max(y)
+y = 2**15/np.max(y) * y
 
 # Un ritmo cardiaco normal está en [50, 200] pulsaciones/min
 # Un ritmo de respiración normal está en [10, 40] respiraciones/min
@@ -151,17 +168,19 @@ plt.ylim(-80, 1)
 plt.subplot(2,1,2)
 angles = np.unwrap(np.angle(h))
 plt.plot(w, angles, 'g')
-plt.ylabel('Angle (radians)', color='g')
+plt.ylabel('Phase (radians)', color='g')
+plt.xlabel('Frecuency (Hz)')
 plt.xlim(0.001, 1000)
 plt.xscale('log')
 plt.grid()
-plt.axis('tight')
+#plt.axis('tight')
 datacursor(draggable=True)
+plt.tight_layout(h_pad = -1)
 plt.show()
 
 # Usando SOS: Mejor opción cuando se aumenta el orden del filtro
-#sos = sc.butter(3, [fL/fN, fH/fN], btype='band', output='sos')
-sos = sc.butter(3, fH/fN, btype='low', output='sos')
+sos = sc.butter(3, [fL/fN, fH/fN], btype='band', output='sos')
+#sos = sc.butter(3, fH/fN, btype='low', output='sos')
 w, h = sc.sosfreqz(sos, worN=L, fs=1000)
 
 plt.figure(6)
@@ -170,22 +189,24 @@ plt.plot(w, 20 * np.log10(abs(h)), 'b')
 plt.ylabel('Amplitude (dB)', color='b')
 plt.xlabel('Frequency (Hz)')
 plt.xscale('log')
-plt.xlim(0.001, 1000)
+plt.xlim(0.001, 100)
 plt.ylim(-80, 1)
 plt.subplot(2,1,2)
 angles = np.unwrap(np.angle(h))
 plt.plot(w, angles, 'g')
-plt.ylabel('Angle (radians)', color='g')
-plt.xlim(0.001, 1000)
+plt.ylabel('Phase (radians)', color='g')
+plt.xlim(0.001, 100)
+plt.xlabel('Frecuency (Hz)')
 plt.xscale('log')
-plt.grid()
-plt.axis('tight')
+#plt.grid()
+#plt.axis('tight')
+#plt.tight_layout()
 datacursor(draggable=True)
 plt.show()
 
-
 y_filt = sc.sosfilt(sos, y)
 plot_signals(y, y_filt, fs, L, 7, 'Unfiltered and filtered signals')
+
 
 y_filt_f = np.fft.fft(y_filt, L)
 y_filt_f = y_filt_f[0:L//2]
@@ -255,18 +276,23 @@ plt.figure(9)
 plt.subplot(3,1,1)
 plt.plot(f, 2**8/L * np.abs(y_f))
 plt.xlim(0, 5)
-plt.title('Global signal spectre')
+plt.title('Global signal FFT')
+plt.ticklabel_format(axis='y', style='sci', scilimits=(4,4))
 
 plt.subplot(3,1,2)
 plt.plot(f, 2**8/L * np.abs(square_f))
 plt.xlim(0, 5)
-plt.title('Square signal spectre')
+plt.title('Estimated square signal FFT')
+plt.ticklabel_format(axis='y', style='sci', scilimits=(4,4))
 
 plt.subplot(3,1,3)
 plt.plot(f_range, 2**8/L * np.abs(yh_f_range))
 plt.plot(f_range[maxim_h], 2**8/L * np.abs(yh_f_range[maxim_h]), "x")
-plt.title('Global - square signal spectre')
+plt.title('Subtraction result FFT')
 plt.xlim(0, 5)
+plt.ticklabel_format(axis='y', style='sci', scilimits=(4,4))
+plt.tight_layout(h_pad = -1, w_pad = -2)
+
 hr = f_range[maxim_h[0]]
 hr_min = hr*60
 
@@ -309,18 +335,19 @@ plt.figure(9)
 plt.subplot(3,1,1)
 plt.plot(f, 2**8/L * np.abs(y_f))
 plt.xlim(0, 5)
-plt.title('Global signal spectre')
+plt.title('Global signal FFT')
 
 plt.subplot(3,1,2)
 plt.plot(f, 2**8/L * np.abs(square_f))
 plt.xlim(0, 5)
-plt.title('Square signal spectre')
+plt.title('Estimated square signal FFT')
 
 plt.subplot(3,1,3)
 plt.plot(f, 2**8/L * yh_f)
-# plt.plot(f[maxim_h], 2**8/L * yh_f[maxim_h], "x")
-plt.title('Global - square signal spectre')
+plt.plot(f[maxim_h], 2**8/L * yh_f[maxim_h], "x")
+plt.title('Subtraction result FFT')
 plt.xlim(0, 5)
+plt.ticklabel_format(axis='y', style='sci', scilimits=(4,4))
 hr = f[maxim_h[0]]
 hr_min = hr*60
 
@@ -349,7 +376,10 @@ for i in range(0,iter+1):   # i toma valores entre 0 e iter
         
 
 #%%
-test = 1
+for i in range(1,10):
+    plt.close(i)
+
+test = 0
 k = 2
 runcell(1)
 runcell(2)

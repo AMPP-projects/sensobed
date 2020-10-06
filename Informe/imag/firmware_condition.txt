@@ -1,0 +1,10 @@
+El procesamiento propuesto es válido siempre y cuando en la estimación de la onda cuadrada de la respiración se obtenga una señal lo más parecida posible a la original, esto está condiciones por la amplitud de la señal cardíaca y la de la respiración.
+Es decir, esto se cumple cuando la señal cuadrada de la respiración es mayor que la del pulso cardíaco.
+Cuando la señal del pulso cardíaco aumenta por encima de un determinado umbral la estimación deja de ser buena y por tanto la substracción en la FFT deja de ser un camino fiable.
+
+The used signal processing works, provided that the breathing signal estimation was similar to the original.
+So, a big heart rate signal (respectively to breathing one) leads to estimation errors, and therefore, non-coherent FFT subtraction.
+When the heart rate signal increases over a threshold, the estimation is no longer good enough, henceforth the FFT subtraction point is not going to be successful.
+
+
+heart signal is small relatively to breathing signal due to the fact that big heart signal leads to estimation errors.

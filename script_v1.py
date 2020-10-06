@@ -202,7 +202,7 @@ while num <= nSlot:
     threshold_h = np.mean( [min(np.abs(mhFRange)), max(np.abs(mhFRange))] )
     maxim_h = sc.find_peaks(np.abs(mhFRange), prominence=threshold_h)
     maxim_h = maxim_h[0] # Nos quedamos con el primer maximo del espectro
-    if num == 0:
+    if slot == 0:
         print('No hay resultados disponibles')
     else:  # Solo si al menos se ha muestreado una vez se sacan resultados
         hr = fRange[maxim_h[0]]
@@ -224,8 +224,8 @@ while num <= nSlot:
     m = p
     p = []
     #print('Vueltas: %d' % vueltas)
-    if num < nSlot:
+    if slot < nSlot:
         GPIO.add_event_detect(RDY, GPIO.FALLING, callback=my_callback)
         print('Interrupt on')   
-    num += 1
+    slot += 1
     
